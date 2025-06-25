@@ -1,15 +1,20 @@
 package com.hypericats.oregoatsr.client.features;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.MaceItem;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.OptionalDouble;
 
@@ -68,6 +73,43 @@ public class Renderer {
         buffer.vertex(matrix, minX, minY, maxZ);
         buffer.vertex(matrix, minX, maxY, maxZ);
         buffer.vertex(matrix, minX, maxY, minZ);
+    }
+
+    public static void drawLine(MatrixStack.Entry entry, VertexConsumer buffer, Vector3f v1, Vector3f v2, int color)
+    {
+        Vector3f normal = v2.sub(v1).normalize();
+        buffer.vertex(entry, v1).color(color).normal(entry, normal);
+        buffer.vertex(entry, v2).color(color).normal(entry, normal);
+    }
+
+    public static Vec3d getClientLookVec(float partialTicks) {
+        float yaw = MinecraftClient.getInstance().player.getYaw(partialTicks);
+        float pitch = MinecraftClient.getInstance().player.getPitch(partialTicks);
+        float radPerDeg = MathHelper.RADIANS_PER_DEGREE;
+        float pi = MathHelper.PI;
+
+        float adjustedYaw = -MathHelper.wrapDegrees(yaw) * radPerDeg - pi;
+        float cosYaw = MathHelper.cos(adjustedYaw);
+        float sinYaw = MathHelper.sin(adjustedYaw);
+
+        float adjustedPitch = -MathHelper.wrapDegrees(pitch) * radPerDeg;
+        float nCosPitch = -MathHelper.cos(adjustedPitch);
+        float sinPitch = MathHelper.sin(adjustedPitch);
+
+        return new Vec3d(sinYaw * nCosPitch, sinPitch, cosYaw * nCosPitch);
+    }
+
+    private static Vec3d getTracerOrigin(float partialTicks) {
+        Vec3d start = getClientLookVec(partialTicks).multiply(0.333f);
+        if(MinecraftClient.getInstance().options
+                .getPerspective() == Perspective.THIRD_PERSON_FRONT)
+            start = start.negate();
+
+        return start;
+    }
+
+    public static void renderTracer(Vec3d tracerPos, MatrixStack matrixStack, VertexConsumer buffer, int color, float partialTicks, Vec3d cameraPos) {
+        drawLine(matrixStack.peek(), buffer, getTracerOrigin(partialTicks).toVector3f(), tracerPos.add(cameraPos).toVector3f(), color);
     }
 
 

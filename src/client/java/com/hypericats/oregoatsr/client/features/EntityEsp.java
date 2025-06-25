@@ -6,7 +6,10 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
@@ -15,37 +18,48 @@ import java.util.stream.Stream;
 public class EntityEsp {
     private static boolean enabled;
     private static boolean showTracer;
-    private static boolean showOutline;
+    private static boolean showOutline = true;
     private final static HashSet<String> entityTypes = new HashSet<>();
     private final static List<String> entityNames = new ArrayList<>();
 
 
 
     public static Stream<Entity> filterEntityList(Stream<Entity> entities) {
-        return entities.filter(e -> (entityTypes.isEmpty() || entityTypes.contains(e.getType().getName().toString().toLowerCase())) && e.getId() != MinecraftClient.getInstance().player.getId() && (entityNames.isEmpty() || entityNames.stream().anyMatch(s -> s.contains(e.getName().toString().toLowerCase()))));
+        return entities.filter(e -> (entityTypes.isEmpty() || entityTypes.contains(e.getType().getName().getString().toLowerCase())) && e.getId() != MinecraftClient.getInstance().player.getId() && (entityNames.isEmpty() || entityNames.stream().anyMatch(s -> s.contains(e.getName().getString().toLowerCase()))));
     }
 
     public static void onRender(MatrixStack matrixStack, float partialTicks) {
-        if (!enabled || !showOutline) return;
+        if (!enabled || (!showOutline && !showTracer)) return;
 
         if (MinecraftClient.getInstance().world == null || MinecraftClient.getInstance().player == null) return;
 
         List<Entity> entities = new ArrayList<>();
         MinecraftClient.getInstance().world.getEntities().forEach(entities::add);
 
+        VertexConsumerProvider.Immediate consumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+        Vec3d cameraPos = MinecraftClient.getInstance().getBlockEntityRenderDispatcher().camera.getPos().negate();
+
+
         for (Entity entity : filterEntityList(entities.stream()).toList()) {
 
-            Camera camera = MinecraftClient.getInstance().getBlockEntityRenderDispatcher().camera;
+            Box entityBox = Renderer.getLerpedEntityBoundingBox(entity, partialTicks);
 
-            matrixStack.push();
-            matrixStack.translate(camera.getPos().negate());
+            if (showOutline) {
+                matrixStack.push();
+                matrixStack.translate(cameraPos);
 
-            VertexConsumerProvider.Immediate consumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+                Renderer.drawOutlinedBox(entityBox, matrixStack, consumer.getBuffer(Renderer.ESP_LINES), 0xff00ff00);
+                consumer.draw(Renderer.ESP_LINES);
+                matrixStack.pop();
+            }
 
-            Renderer.drawOutlinedBox(Renderer.getLerpedEntityBoundingBox(entity, partialTicks), matrixStack, consumer.getBuffer(Renderer.ESP_LINES), 0xff00ff00);
-            consumer.draw(Renderer.ESP_LINES);
+            if (showTracer) {
+                matrixStack.push();
 
-            matrixStack.pop();
+                Renderer.renderTracer(entityBox.getCenter(), matrixStack, consumer.getBuffer(Renderer.ESP_LINES), 0xffff0000, partialTicks, cameraPos);
+                consumer.draw(Renderer.ESP_LINES);
+                matrixStack.pop();
+            }
         }
     }
 

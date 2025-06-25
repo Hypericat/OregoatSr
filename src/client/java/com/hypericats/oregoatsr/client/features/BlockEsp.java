@@ -20,34 +20,43 @@ import java.util.HashSet;
 public class BlockEsp {
     private static boolean enabled;
     private static boolean showTracer;
-    private static boolean showOutline;
+    private static boolean showOutline = true;
     private final static HashSet<String> filterNames = new HashSet<>();
 
     private static final HashMap<Long, HashSet<BlockPos>> blocks = new HashMap<>();
 
     public static boolean shouldESPBlock(BlockState block) {
-        return filterNames.contains(block.getBlock().getName().toString().toLowerCase());
+        return filterNames.contains(block.getBlock().getName().getString().toLowerCase());
     }
 
     public static void onRender(MatrixStack matrixStack, float partialTicks) {
-        if (!isEnabled() || !showOutline) return;
+        if (!isEnabled() || (!showOutline && !showTracer)) return;
 
         Vec3d cameraPos = MinecraftClient.getInstance().getBlockEntityRenderDispatcher().camera.getPos().negate();
-
-        matrixStack.push();
-        matrixStack.translate(cameraPos);
-
-        blocks.values().forEach(b -> b.forEach(pos -> renderPos(pos, matrixStack)));
-
-        matrixStack.pop();
+        blocks.values().forEach(b -> b.forEach(pos -> renderPos(pos, matrixStack, partialTicks, cameraPos)));
     }
 
-    public static void renderPos(BlockPos pos, MatrixStack matrixStack) {
+    public static void renderPos(BlockPos pos, MatrixStack matrixStack, float partialTicks, Vec3d cameraPos) {
         Box box = new Box(pos);
         VertexConsumerProvider.Immediate consumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
 
-        Renderer.drawOutlinedBox(box, matrixStack, consumer.getBuffer(Renderer.ESP_LINES), 0xff0000ff);
-        consumer.draw(Renderer.ESP_LINES);
+        if (showOutline) {
+            matrixStack.push();
+            matrixStack.translate(cameraPos);
+
+            Renderer.drawOutlinedBox(box, matrixStack, consumer.getBuffer(Renderer.ESP_LINES), 0xff0000ff);
+            consumer.draw(Renderer.ESP_LINES);
+
+            matrixStack.pop();
+        }
+
+        if (showTracer) {
+            matrixStack.push();
+
+            Renderer.renderTracer(box.getCenter(), matrixStack, consumer.getBuffer(Renderer.ESP_LINES), 0xffff0000, partialTicks, cameraPos);
+            consumer.draw(Renderer.ESP_LINES);
+            matrixStack.pop();
+        }
     }
 
     public static Long getChunkHash(int x, int z) {

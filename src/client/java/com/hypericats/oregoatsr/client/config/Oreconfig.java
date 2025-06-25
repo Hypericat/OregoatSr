@@ -145,19 +145,4 @@ public class Oreconfig {
                 .controller(controller)
                 .build());
     }
-
-    private Option.Builder<Boolean> getString(String name, String description, boolean defaultValue, Supplier<Boolean> getter, Consumer<Boolean> listener) {
-        return Option.<Boolean>createBuilder()
-                .name(Text.of(name))
-                .description(OptionDescription.of(Text.of(description)))
-                .binding(
-                        defaultValue,
-                        getter,
-                        listener
-                )
-                .controller(TickBoxControllerBuilder::create);
-    }
-
-
-
 }
