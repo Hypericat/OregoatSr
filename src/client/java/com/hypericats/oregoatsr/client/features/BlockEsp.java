@@ -13,17 +13,19 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.Chunk;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class BlockEsp {
     private static boolean enabled;
-    private static boolean showTracer;
+    private static boolean showTracer = true;
     private static boolean showOutline = true;
+    private static boolean filterFirst = true;
     private final static HashSet<String> filterNames = new HashSet<>();
 
     private static final HashMap<Long, HashSet<BlockPos>> blocks = new HashMap<>();
+
+    private static double min;
+    private static BlockPos minBlock;
 
     public static boolean shouldESPBlock(BlockState block) {
         return filterNames.contains(block.getBlock().getName().getString().toLowerCase());
@@ -33,7 +35,26 @@ public class BlockEsp {
         if (!isEnabled() || (!showOutline && !showTracer)) return;
 
         Vec3d cameraPos = MinecraftClient.getInstance().getBlockEntityRenderDispatcher().camera.getPos().negate();
+
+        if (filterFirst) {
+            min = Double.MAX_VALUE;
+            minBlock = null;
+
+            blocks.values().forEach(b -> b.forEach(BlockEsp::updateMin));
+
+            if (minBlock == null) return;
+            renderPos(minBlock, matrixStack, partialTicks, cameraPos);
+            return;
+        }
         blocks.values().forEach(b -> b.forEach(pos -> renderPos(pos, matrixStack, partialTicks, cameraPos)));
+    }
+
+    public static void updateMin(BlockPos pos) {
+        double distance = pos.getSquaredDistance(MinecraftClient.getInstance().player.getPos());
+        if (distance < min) {
+            min = distance;
+            minBlock = pos;
+        }
     }
 
     public static void renderPos(BlockPos pos, MatrixStack matrixStack, float partialTicks, Vec3d cameraPos) {
@@ -60,7 +81,7 @@ public class BlockEsp {
     }
 
     public static Long getChunkHash(int x, int z) {
-        return ((long) x) | (((long) z) << 16);
+        return (x & 0xFFFFFFFFL) | ((z & 0xFFFFFFFFL) << 32);
     }
 
 
@@ -73,7 +94,10 @@ public class BlockEsp {
 
         long hash = getChunkHash(chunk.getPos());
 
-        blocks.remove(hash); // Shouldn't be needed but just to be safe
+
+        if (blocks.containsKey(hash)) {
+            throw new IllegalStateException("Chunk loaded with existing data!");
+        }
 
         HashSet<BlockPos> positions = new HashSet<>();
 
@@ -108,7 +132,7 @@ public class BlockEsp {
     }
     
     public static void handleBlockChange(BlockPos pos, BlockState state) {
-        long chunkHash = (pos.getX() >> 4) | ((pos.getZ() & 0xFFF0) << 12); //Small optimizations
+        long chunkHash = getChunkHash(pos.getX() >> 4, pos.getZ() >> 4);
 
         if (shouldESPBlock(state)) {
             if (!blocks.containsKey(chunkHash)) {
@@ -164,5 +188,13 @@ public class BlockEsp {
         filterNames.forEach(name -> builder.append(name).append(";"));
         builder.deleteCharAt(builder.length() - 1);
         return builder.toString();
+    }
+
+    public static boolean isFilterFirst() {
+        return filterFirst;
+    }
+
+    public static void setFilterFirst(boolean filterFirst) {
+        BlockEsp.filterFirst = filterFirst;
     }
 }

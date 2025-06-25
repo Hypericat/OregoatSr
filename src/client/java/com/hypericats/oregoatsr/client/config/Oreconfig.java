@@ -54,7 +54,8 @@ public class Oreconfig {
         addGroup("Block ESP", "Highlights certain blocks");
         addOption("Toggle", "Toggles Block ESP", false, BlockEsp::isEnabled, BlockEsp::setEnabled, BooleanControllerBuilderImpl::new);
         addOption("Show Outline", "Show ESP block outline", true, BlockEsp::isShowOutline, BlockEsp::setShowOutline, BooleanControllerBuilderImpl::new);
-        addOption("Show Tracer", "Show ESP block tracer", false, BlockEsp::isShowTracer, BlockEsp::setShowTracer, BooleanControllerBuilderImpl::new);
+        addOption("Show Tracer", "Show ESP block tracer", true, BlockEsp::isShowTracer, BlockEsp::setShowTracer, BooleanControllerBuilderImpl::new);
+        addOption("Filter First", "Only show the closest target", true, BlockEsp::isFilterFirst, BlockEsp::setFilterFirst, BooleanControllerBuilderImpl::new);
         addOption("Block Name Filter", "Filters block names to match this string. Separate blocks with ;", "", BlockEsp::getNameFilter, BlockEsp::setNameFilter, StringControllerBuilderImpl::new);
         finish();
 
@@ -62,7 +63,8 @@ public class Oreconfig {
         addGroup("Entity ESP", "Highlights certain entities");
         addOption("Toggle", "Toggles Entity ESP", false, EntityEsp::isEnabled, EntityEsp::setEnabled, BooleanControllerBuilderImpl::new);
         addOption("Show Outline", "Show ESP entity outline", true, EntityEsp::isShowOutline, EntityEsp::setShowOutline, BooleanControllerBuilderImpl::new);
-        addOption("Show Tracer", "Show ESP entity tracer", false, EntityEsp::isShowTracer, EntityEsp::setShowTracer, BooleanControllerBuilderImpl::new);
+        addOption("Show Tracer", "Show ESP entity tracer", true, EntityEsp::isShowTracer, EntityEsp::setShowTracer, BooleanControllerBuilderImpl::new);
+        addOption("Filter First", "Only show the closest target", true, EntityEsp::isFilterFirst, EntityEsp::setFilterFirst, BooleanControllerBuilderImpl::new);
         addOption("Entity Type Filter", "Filters types to match this string. Separate types with ;", "", EntityEsp::getEntityTypeFilter, EntityEsp::setEntityTypeFilter, StringControllerBuilderImpl::new);
         addOption("Entity Name Filter", "Filters entity names to match this string. Separate names with ;", "", EntityEsp::getEntityNameFilter, EntityEsp::setEntityNameFilter, StringControllerBuilderImpl::new);
         finish();

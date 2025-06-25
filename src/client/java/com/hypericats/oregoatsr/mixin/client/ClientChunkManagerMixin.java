@@ -18,6 +18,6 @@ import java.util.function.Consumer;
 public class ClientChunkManagerMixin {
     @Inject(at = @At("RETURN"), method = "loadChunkFromPacket")
     private void onLoadChunkFromPacket(int x, int z, PacketByteBuf buf, Map<Heightmap.Type, long[]> heightmaps, Consumer<ChunkData.BlockEntityVisitor> consumer, CallbackInfoReturnable<WorldChunk> cir) {
-        BlockEsp.onChunkLoad(cir.getReturnValue());
+        ///BlockEsp.onChunkLoad(cir.getReturnValue());
     }
 }

@@ -17,15 +17,20 @@ import java.util.stream.Stream;
 
 public class EntityEsp {
     private static boolean enabled;
-    private static boolean showTracer;
+    private static boolean showTracer = true;
     private static boolean showOutline = true;
+    private static boolean filterFirst = true;
     private final static HashSet<String> entityTypes = new HashSet<>();
     private final static List<String> entityNames = new ArrayList<>();
 
 
 
-    public static Stream<Entity> filterEntityList(Stream<Entity> entities) {
-        return entities.filter(e -> (entityTypes.isEmpty() || entityTypes.contains(e.getType().getName().getString().toLowerCase())) && e.getId() != MinecraftClient.getInstance().player.getId() && (entityNames.isEmpty() || entityNames.stream().anyMatch(s -> s.contains(e.getName().getString().toLowerCase()))));
+    public static List<Entity> filterEntityList(Stream<Entity> entities) {
+        Stream<Entity> stream = entities.filter(e -> (entityTypes.isEmpty() || entityTypes.contains(e.getType().getName().getString().toLowerCase())) && e.getId() != MinecraftClient.getInstance().player.getId() && (entityNames.isEmpty() || entityNames.stream().anyMatch(s -> s.contains(e.getName().getString().toLowerCase()))));
+        if (filterFirst) {
+            return stream.min(Comparator.comparingDouble(e -> e.getPos().squaredDistanceTo(MinecraftClient.getInstance().player.getPos()))).stream().toList();
+        }
+        return stream.toList();
     }
 
     public static void onRender(MatrixStack matrixStack, float partialTicks) {
@@ -40,7 +45,7 @@ public class EntityEsp {
         Vec3d cameraPos = MinecraftClient.getInstance().getBlockEntityRenderDispatcher().camera.getPos().negate();
 
 
-        for (Entity entity : filterEntityList(entities.stream()).toList()) {
+        for (Entity entity : filterEntityList(entities.stream())) {
 
             Box entityBox = Renderer.getLerpedEntityBoundingBox(entity, partialTicks);
 
@@ -113,5 +118,13 @@ public class EntityEsp {
         entityNames.forEach(name -> builder.append(name).append(";"));
         builder.deleteCharAt(builder.length() - 1);
         return builder.toString();
+    }
+
+    public static boolean isFilterFirst() {
+        return filterFirst;
+    }
+
+    public static void setFilterFirst(boolean filterFirst) {
+        EntityEsp.filterFirst = filterFirst;
     }
 }

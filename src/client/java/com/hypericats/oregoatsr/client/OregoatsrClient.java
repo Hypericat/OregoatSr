@@ -18,6 +18,10 @@ public class OregoatsrClient implements ClientModInitializer {
             BlockEsp.onChunkUnload(chunk);
         });
 
+        ClientChunkEvents.CHUNK_LOAD.register((clientWorld, chunk) -> {
+            BlockEsp.onChunkLoad(chunk);
+        });
+
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((clientWorld, chunk) -> {
             BlockEsp.onWorldLoad();
         });
