@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "oregoatsr",
+  "version": "${version}",
+  "name": "OregoatSr",
+  "description": "Oregoat",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/oregoatsr/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.hypericats.oregoatsr.client.OregoatsrDataGenerator"
+    ],
+    "client": [
+      "com.hypericats.oregoatsr.client.OregoatsrClient"
+    ],
+    "main": [
+      "com.hypericats.oregoatsr.Oregoatsr"
+    ]
+  },
+  "mixins": [
+    "oregoatsr.mixins.json",
+    {
+      "config": "oregoatsr.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}",
+    "yet_another_config_lib_v3": ">=3.7.1+1.21.5"
+  }
+}
