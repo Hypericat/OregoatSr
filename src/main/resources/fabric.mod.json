@@ -18,6 +18,9 @@
     ],
     "main": [
       "com.hypericats.oregoatsr.Oregoatsr"
+    ],
+    "modmenu": [
+      "com.hypericats.oregoatsr.client.config.ModMenu"
     ]
   },
   "mixins": [

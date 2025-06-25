@@ -1,7 +1,6 @@
 package com.hypericats.oregoatsr.client.features;
 
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
@@ -14,18 +13,25 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.Chunk;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
 public class BlockEsp {
+    private static boolean enabled;
+    private static boolean showTracer;
+    private static boolean showOutline;
+    private final static HashSet<String> filterNames = new HashSet<>();
 
     private static final HashMap<Long, HashSet<BlockPos>> blocks = new HashMap<>();
 
     public static boolean shouldESPBlock(BlockState block) {
-        return block.getBlock() == Blocks.LAVA;
+        return filterNames.contains(block.getBlock().getName().toString().toLowerCase());
     }
 
     public static void onRender(MatrixStack matrixStack, float partialTicks) {
+        if (!isEnabled() || !showOutline) return;
+
         Vec3d cameraPos = MinecraftClient.getInstance().getBlockEntityRenderDispatcher().camera.getPos().negate();
 
         matrixStack.push();
@@ -54,6 +60,8 @@ public class BlockEsp {
     }
 
     public static void onChunkLoad(Chunk chunk) {
+        if (!isEnabled()) return;
+
         long hash = getChunkHash(chunk.getPos());
 
         blocks.remove(hash); // Shouldn't be needed but just to be safe
@@ -72,10 +80,13 @@ public class BlockEsp {
     }
 
     public static void onChunkUnload(Chunk chunk) {
+        if (!isEnabled()) return;
         blocks.remove(getChunkHash(chunk.getPos()));
     }
 
     public static void onPacket(Packet<?> packet) {
+        if (!isEnabled()) return;
+
         if (packet instanceof BlockUpdateS2CPacket updatePacket) {
             handleBlockChange(updatePacket.getPos(), updatePacket.getState());
             return;
@@ -103,8 +114,46 @@ public class BlockEsp {
         blocks.get(chunkHash).remove(pos);
     }
 
+    public static boolean isEnabled() {
+        return enabled;
+    }
+
+    public static void setEnabled(boolean b) {
+        enabled = b;
+
+        if (!b) {
+            onWorldLoad();
+        }
+    }
 
 
+    public static boolean isShowTracer() {
+        return showTracer;
+    }
 
+    public static void setShowTracer(boolean showTracer) {
+        BlockEsp.showTracer = showTracer;
+    }
 
+    public static boolean isShowOutline() {
+        return showOutline;
+    }
+
+    public static void setShowOutline(boolean showOutline) {
+        BlockEsp.showOutline = showOutline;
+    }
+
+    public static void setNameFilter(String string) {
+        filterNames.clear();
+        if (string.isEmpty()) return;
+        filterNames.addAll(Arrays.asList(string.split(";")));
+    }
+
+    public static String getNameFilter() {
+        if (filterNames.isEmpty()) return "";
+        StringBuilder builder = new StringBuilder();
+        filterNames.forEach(name -> builder.append(name).append(";"));
+        builder.deleteCharAt(builder.length() - 1);
+        return builder.toString();
+    }
 }
